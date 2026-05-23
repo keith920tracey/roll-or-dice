@@ -609,6 +609,11 @@ function applyTargetMargin() {
 
 // ── Save Modal ──────────────────────────────────────────────────────────────
 
+function getActivePage() {
+  const active = document.querySelector(".page.active");
+  return active ? active.id.replace("page-", "") : null;
+}
+
 async function saveModal() {
   const btn = document.getElementById('modal-save-btn');
   btn.disabled = true;
@@ -619,18 +624,14 @@ async function saveModal() {
     await doSave();
     await loadAllData();
     closeModal();
-    const refreshers = {
-      product:'products', material:'materials', stock:'inventory',
-      sale:'sales', equipment:'equipment'
+    // Always re-render whichever page is currently active
+    const activePage = getActivePage();
+    const renders = {
+      dashboard: renderDashboard,
+      products: renderProductList, materials: renderMaterialList,
+      inventory: renderInventoryList, sales: renderSalesList, equipment: renderEquipmentList
     };
-    const page = refreshers[currentModal];
-    if (page) {
-      const renders = {
-        products: renderProductList, materials: renderMaterialList,
-        inventory: renderInventoryList, sales: renderSalesList, equipment: renderEquipmentList
-      };
-      if (renders[page]) renders[page]();
-    }
+    if (activePage && renders[activePage]) renders[activePage]();
   } catch(e) {
     alert('Error saving: ' + e.message);
     console.error(e);
