@@ -156,13 +156,19 @@ function renderDashboard() {
   document.getElementById('dash-low-stock').innerHTML = lowStock.length
     ? lowStock.map(i => {
         const mat = DB.materials.find(m => m.id === i.material_id);
+        const qty = parseFloat(i.qty_on_hand || 0);
+        const status = qty <= 0 ? 'bad' : 'warn';
+        const reorderBtn = mat?.supplier_url
+          ? `<a href="${mat.supplier_url}" target="_blank" class="btn-reorder btn-reorder-alert">Order ↗</a>`
+          : '';
         return `<div class="dash-row-item">
           <div>
-            <div class="item-name">${i.material_name}</div>
+            <div class="item-name">${i.material_name}${i.thickness ? ' <span class="item-thickness">'+i.thickness+'</span>' : ''}</div>
             <div class="item-sub">${mat?.category || ''}</div>
           </div>
           <div class="item-right">
-            <span class="badge badge-bad">${i.qty_on_hand} ${mat?.unit || ''} left</span>
+            <span class="badge badge-${status}">${i.qty_on_hand} ${mat?.unit || ''} left</span>
+            ${reorderBtn}
           </div>
         </div>`;
       }).join('')
