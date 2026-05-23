@@ -1,56 +1,8 @@
 // Roll or Dice — Main Application Logic
 
-// ── Sidebar Toggle ──────────────────────────────────────────────────────────
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebar-overlay');
-  const isMobile = window.innerWidth <= 768;
-
-  if (isMobile) {
-    // Mobile: slide in/out as drawer
-    sidebar.classList.toggle('sidebar-open');
-    overlay.classList.toggle('active');
-  } else {
-    // Desktop: collapse to icon-only rail
-    sidebar.classList.toggle('sidebar-collapsed');
-    const btn = sidebar.querySelector('.sidebar-collapse-btn svg');
-    if (btn) {
-      const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
-      btn.innerHTML = isCollapsed
-        ? '<polyline points="9 18 15 12 9 6"/>'   // chevron right = expand
-        : '<polyline points="15 18 9 12 15 6"/>';  // chevron left = collapse
-    }
-    localStorage.setItem('rod_sidebar_collapsed', sidebar.classList.contains('sidebar-collapsed'));
-  }
-}
-
-// Restore sidebar state on load
-function initSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  if (!sidebar) return;
-  const collapsed = localStorage.getItem('rod_sidebar_collapsed') === 'true';
-  if (collapsed && window.innerWidth > 768) {
-    sidebar.classList.add('sidebar-collapsed');
-    const btn = sidebar.querySelector('.sidebar-collapse-btn svg');
-    if (btn) btn.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
-  }
-}
-
-// Close mobile drawer when clicking a nav link
-function closeSidebarOnMobile() {
-  if (window.innerWidth <= 768) {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebar-overlay');
-    sidebar?.classList.remove('sidebar-open');
-    overlay?.classList.remove('active');
-  }
-}
-
 // ── Page Navigation ─────────────────────────────────────────────────────────
 
 async function showPage(name) {
-  closeSidebarOnMobile();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
