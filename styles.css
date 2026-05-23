@@ -578,3 +578,39 @@ input:-webkit-autofill {
   flex-shrink: 0;
   line-height: 1;
 }
+
+/* ── Supplier URL field ────────────────────────────────────────────────────── */
+
+.url-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.url-input-wrap input {
+  flex: 1;
+}
+
+.url-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.url-open-btn:hover { background: var(--bg-mid); border-color: var(--gold); }
+
+.supplier-link {
+  color: var(--gold);
+  text-decoration: none;
+  font-size: 13px;
+}
+.supplier-link:hover { text-decoration: underline; }

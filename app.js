@@ -244,7 +244,7 @@ function renderMaterialList() {
               <td>${m.name}</td>
               <td>${m.unit}</td>
               <td>${fmt(m.cost_per_unit)}</td>
-              <td>${m.supplier || '—'}</td>
+              <td>${m.supplier_url ? `<a href="${m.supplier_url}" target="_blank" class="supplier-link">${m.supplier || 'Visit'} ↗</a>` : (m.supplier || '—')}</td>
               <td>${m.reorder_threshold || CONFIG.DEFAULT_LOW_STOCK} ${m.unit}</td>
               <td class="td-actions">
                 <button class="btn-icon" onclick="openEditModal('material','${m.id}')">✎</button>
@@ -454,6 +454,13 @@ function renderModalContent(type, data) {
         <div class="field"><label>Unit *</label><input id="f-unit" value="${v('unit','sheet')}" placeholder="e.g. sheet, bottle, pack, each"></div>
         <div class="field"><label>Supplier</label><input id="f-supplier" value="${v('supplier')}" placeholder="e.g. Woodcraft, Amazon"></div>
         <div class="field"><label>Reorder when below</label><input type="number" id="f-reorder_threshold" value="${v('reorder_threshold','3')}" step="1" min="0"></div>
+        <div class="field full supplier-url-field">
+          <label>Supplier website</label>
+          <div class="url-input-wrap">
+            <input id="f-supplier_url" value="${v('supplier_url')}" placeholder="https://www.amazon.com/your-product-link" type="url">
+            ${v('supplier_url') ? `<a href="${v('supplier_url')}" target="_blank" class="url-open-btn" title="Open supplier page">↗</a>` : ''}
+          </div>
+        </div>
       </div>
       <div class="cost-calc-box">
         <div class="cost-calc-title">Cost calculator — enter what you paid and how many you got</div>
@@ -706,6 +713,7 @@ async function doSave() {
       unit: gv('f-unit') || 'sheet',
       cost_per_unit: gvn('f-cost_per_unit'),
       supplier: gv('f-supplier'),
+      supplier_url: gv('f-supplier_url'),
       reorder_threshold: gvn('f-reorder_threshold'),
       notes: gv('f-notes'),
     };
