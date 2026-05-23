@@ -2,7 +2,7 @@
 
 // ── Page Navigation ─────────────────────────────────────────────────────────
 
-function showPage(name) {
+async function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
@@ -15,6 +15,7 @@ function showPage(name) {
     sales:     renderSalesList,
     equipment: renderEquipmentList,
   };
+  await loadAllData();
   if (renders[name]) renders[name]();
 }
 
