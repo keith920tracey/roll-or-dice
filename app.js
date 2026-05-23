@@ -96,7 +96,8 @@ function renderDashboard() {
   const lowStock     = DB.inventory.filter(i => {
     const mat = DB.materials.find(m => m.id === i.material_id);
     const thresh = parseFloat(mat?.reorder_threshold || CONFIG.DEFAULT_LOW_STOCK);
-    return parseFloat(i.qty_on_hand || 0) <= thresh;
+    const qty = parseFloat(i.qty_on_hand) || 0;
+    return !isNaN(qty) && qty < thresh;
   });
 
   document.getElementById('dash-stats').innerHTML = `
