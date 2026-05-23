@@ -651,3 +651,104 @@ input:-webkit-autofill {
   font-style: italic;
   cursor: help;
 }
+
+/* ── Collapsible Sidebar ──────────────────────────────────────────────────── */
+
+.sidebar-collapse-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-collapse-btn:hover { color: var(--gold); background: var(--bg-raised); }
+
+/* Collapsed desktop state */
+.sidebar-collapsed {
+  width: 56px !important;
+}
+.sidebar-collapsed .brand-text,
+.sidebar-collapsed .nav-link span,
+.sidebar-collapsed .sidebar-footer { display: none; }
+.sidebar-collapsed .sidebar-brand { justify-content: center; padding: 0 0 1.5rem; }
+.sidebar-collapsed .nav-link {
+  justify-content: center;
+  padding: 10px 0;
+  border-left: 2px solid transparent;
+}
+.sidebar-collapsed .nav-link.active { border-left-color: var(--gold); }
+.sidebar-collapsed .nav-link svg { margin: 0; }
+.sidebar-collapsed .sidebar-collapse-btn { margin: 0 auto; }
+
+/* Hamburger button — hidden on desktop */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 200;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  color: var(--gold);
+  padding: 8px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Overlay — hidden on desktop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 99;
+}
+.sidebar-overlay.active { display: block; }
+
+/* ── Mobile styles ────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app { flex-direction: column; }
+
+  .hamburger-btn { display: flex; }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: 220px !important;
+  }
+  .sidebar.sidebar-open { transform: translateX(0); }
+
+  .sidebar-collapse-btn { display: none; }
+
+  .main-content {
+    padding: 1rem 1rem 1rem 1rem;
+    margin-top: 48px;
+  }
+
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-row { grid-template-columns: 1fr; }
+  .product-grid { grid-template-columns: 1fr; }
+  .fg2 { grid-template-columns: 1fr; }
+  .fg3 { grid-template-columns: 1fr; }
+  .preview-channels { grid-template-columns: 1fr; }
+  .cost-calc-row { flex-direction: column; }
+  .cost-calc-divider { display: none; }
+
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 6px 8px; }
+
+  .modal { max-height: 95vh; margin: 0.5rem; width: calc(100% - 1rem); }
+}
