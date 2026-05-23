@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roll or Dice — Business Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <polygon points="24,4 44,36 4,36" stroke="#c9a84c" stroke-width="2" fill="none"/>
+        <circle cx="24" cy="28" r="6" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+        <circle cx="24" cy="28" r="2" fill="#c9a84c"/>
+      </svg>
+    </div>
+    <h1>Roll or Dice</h1>
+    <p>Business Tracker</p>
+    <button id="signin-btn" class="btn-signin" onclick="handleSignIn()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/><path d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z" fill="#34A853"/><path d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z" fill="#FBBC05"/><path d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.48a4.77 4.77 0 0 1 4.48-3.3z" fill="#EA4335"/></svg>
+      Sign in with Google
+    </button>
+    <p class="auth-note">Your data stays in your Google Sheet — we never store it.</p>
+  </div>
+</div>
+
+<div id="app" class="app hidden">
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+        <polygon points="24,4 44,36 4,36" stroke="#c9a84c" stroke-width="2.5" fill="none"/>
+        <circle cx="24" cy="28" r="6" stroke="#c9a84c" stroke-width="2" fill="none"/>
+        <circle cx="24" cy="28" r="2.5" fill="#c9a84c"/>
+      </svg>
+      <span>Roll or Dice</span>
+    </div>
+    <nav class="nav-links">
+      <a class="nav-link active" data-page="dashboard" onclick="showPage('dashboard')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-link" data-page="products" onclick="showPage('products')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        Products
+      </a>
+      <a class="nav-link" data-page="materials" onclick="showPage('materials')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Materials
+      </a>
+      <a class="nav-link" data-page="inventory" onclick="showPage('inventory')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        Inventory
+      </a>
+      <a class="nav-link" data-page="sales" onclick="showPage('sales')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Sales Log
+      </a>
+      <a class="nav-link" data-page="equipment" onclick="showPage('equipment')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M21 12h-2M5 12H3M17.66 17.66l1.41 1.41M6.34 6.34L4.93 4.93"/><circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/></svg>
+        Equipment
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info" id="user-info"></div>
+      <button class="btn-signout" onclick="handleSignOut()">Sign out</button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div id="sync-bar" class="sync-bar hidden">
+      <span id="sync-msg">Syncing...</span>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h2>Dashboard</h2>
+        <span class="page-sub">Your business at a glance</span>
+      </div>
+      <div class="stat-grid" id="dash-stats"></div>
+      <div class="dash-row">
+        <div class="dash-card">
+          <h3>Top Products by Profit</h3>
+          <div id="dash-top-products"></div>
+        </div>
+        <div class="dash-card">
+          <h3>Low Stock Alerts</h3>
+          <div id="dash-low-stock"></div>
+        </div>
+      </div>
+      <div class="dash-card full">
+        <h3>Recent Sales</h3>
+        <div id="dash-recent-sales"></div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="page-products" class="page">
+      <div class="page-header">
+        <h2>Products</h2>
+        <button class="btn-primary" onclick="openModal('product')">+ Add Product</button>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="product-search" placeholder="Search products..." oninput="renderProductList()">
+        <select id="product-filter-cat" onchange="renderProductList()">
+          <option value="">All categories</option>
+          <option>Dice Box</option><option>Dice Tray</option><option>Dice Jail</option>
+          <option>Card Box</option><option>Chest</option><option>Coaster</option><option>Other</option>
+        </select>
+      </div>
+      <div id="product-list" class="product-grid"></div>
+    </div>
+
+    <!-- MATERIALS -->
+    <div id="page-materials" class="page">
+      <div class="page-header">
+        <h2>Materials</h2>
+        <button class="btn-primary" onclick="openModal('material')">+ Add Material</button>
+      </div>
+      <div class="filter-bar">
+        <select id="material-filter-cat" onchange="renderMaterialList()">
+          <option value="">All categories</option>
+          <option>Sheet Good - Wood</option>
+          <option>Sheet Good - Acrylic</option>
+          <option>Sheet Good - Felt</option>
+          <option>Adhesive</option>
+          <option>Hardware</option>
+          <option>Finishing</option>
+          <option>Packaging</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div id="material-list"></div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div id="page-inventory" class="page">
+      <div class="page-header">
+        <h2>Inventory</h2>
+        <button class="btn-primary" onclick="openModal('stock')">+ Update Stock</button>
+      </div>
+      <div id="inventory-list"></div>
+    </div>
+
+    <!-- SALES -->
+    <div id="page-sales" class="page">
+      <div class="page-header">
+        <h2>Sales Log</h2>
+        <button class="btn-primary" onclick="openModal('sale')">+ Log Sale</button>
+      </div>
+      <div class="filter-bar">
+        <select id="sales-filter-channel" onchange="renderSalesList()">
+          <option value="">All channels</option>
+          <option>Etsy</option><option>Direct - Customer</option><option>Direct - Hobby Shop</option>
+        </select>
+        <input type="month" id="sales-filter-month" onchange="renderSalesList()">
+      </div>
+      <div id="sales-summary" class="sales-summary-bar"></div>
+      <div id="sales-list"></div>
+    </div>
+
+    <!-- EQUIPMENT -->
+    <div id="page-equipment" class="page">
+      <div class="page-header">
+        <h2>Equipment</h2>
+        <button class="btn-primary" onclick="openModal('equipment')">+ Add Equipment</button>
+      </div>
+      <div id="equipment-list"></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="closeModalIfOutside(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-title">Add Item</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn-primary" id="modal-save-btn" onclick="saveModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="sheets.js"></script>
+<script src="app.js"></script>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
