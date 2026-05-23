@@ -614,3 +614,16 @@ input:-webkit-autofill {
   font-size: 13px;
 }
 .supplier-link:hover { text-decoration: underline; }
+
+/* ── Optional field label ─────────────────────────────────────────────────── */
+.optional-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ── Magnet size field — hidden by default, shown only for Magnets category ── */
+#magnet-size-field {
+  display: none;
+}

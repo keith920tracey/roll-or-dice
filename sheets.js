@@ -18,7 +18,7 @@ const SCHEMA = {
     'notes','created_at'
   ],
   Materials: [
-    'id','name','category','unit','cost_per_unit','supplier','supplier_url','reorder_threshold','notes'
+    'id','name','category','unit','thickness','cost_per_unit','supplier','supplier_url','reorder_threshold','notes'
   ],
   Inventory: [
     'id','material_id','material_name','qty_on_hand','last_updated','notes'

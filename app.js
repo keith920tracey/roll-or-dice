@@ -238,10 +238,11 @@ function renderMaterialList() {
     ? Object.entries(grouped).map(([cat, mats]) => `
         <div class="group-header">${cat}</div>
         <table class="data-table">
-          <thead><tr><th>Name</th><th>Unit</th><th>Cost/Unit</th><th>Supplier</th><th>Reorder At</th><th></th></tr></thead>
+          <thead><tr><th>Name</th><th>Thickness</th><th>Unit</th><th>Cost/Unit</th><th>Supplier</th><th>Reorder At</th><th></th></tr></thead>
           <tbody>${mats.map(m => `
             <tr>
               <td>${m.name}</td>
+              <td>${m.thickness || '—'}</td>
               <td>${m.unit}</td>
               <td>${fmt(m.cost_per_unit)}</td>
               <td>${m.supplier_url ? `<a href="${m.supplier_url}" target="_blank" class="supplier-link">${m.supplier || 'Visit'} ↗</a>` : (m.supplier || '—')}</td>
@@ -446,11 +447,29 @@ function renderModalContent(type, data) {
 
     material: () => `
       <div class="fg2">
-        <div class="field"><label>Name *</label><input id="f-name" value="${v('name')}" placeholder="e.g. Basswood 12x12"></div>
-        <div class="field"><label>Category *</label><select id="f-category">
-          ${['Sheet Good - Wood','Sheet Good - Acrylic','Sheet Good - Felt','Adhesive','Hardware','Finishing','Packaging','Other']
+        <div class="field"><label>Category *</label><select id="f-category" onchange="updateMaterialNameOptions()">
+          ${['Sheet Good - Wood','Sheet Good - Acrylic','Sheet Good - Felt','Adhesive','Hardware','Magnets','Finishing','Packaging','Dice','Other']
             .map(c=>`<option${v('category')===c?' selected':''}>${c}</option>`).join('')}
         </select></div>
+        <div class="field"><label>Name *</label>
+          <div class="name-input-wrap">
+            <input id="f-name" value="${v('name')}" placeholder="e.g. Basswood 12x12" list="f-name-suggestions">
+            <datalist id="f-name-suggestions"></datalist>
+          </div>
+        </div>
+        <div class="field" id="magnet-size-field">
+          <label>Magnet size *</label>
+          <select id="f-magnet-size" onchange="document.getElementById('f-name').value=this.value">
+            ${['Round 5x3','Round 10x3','Round 10x2','Round 5x2','Round 6x2','Round 3x1','Round 4x2','Round 3x2']
+              .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Thickness <span class="optional-label">(optional)</span></label>
+          <select id="f-thickness">
+            <option value="">— not applicable —</option>
+            ${['1mm','3mm','5mm'].map(t=>`<option${v('thickness')===t?' selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
         <div class="field"><label>Unit *</label><input id="f-unit" value="${v('unit','sheet')}" placeholder="e.g. sheet, bottle, pack, each"></div>
         <div class="field"><label>Supplier</label><input id="f-supplier" value="${v('supplier')}" placeholder="e.g. Woodcraft, Amazon"></div>
         <div class="field"><label>Reorder when below</label><input type="number" id="f-reorder_threshold" value="${v('reorder_threshold','3')}" step="1" min="0"></div>
@@ -531,6 +550,7 @@ function renderModalContent(type, data) {
   document.getElementById('modal-body').innerHTML = forms[type]();
   if (type === 'product') setTimeout(updateProductPreview, 50);
   if (type === 'sale') setTimeout(updateSalePrice, 50);
+  if (type === 'material') setTimeout(updateMaterialNameOptions, 50);
 }
 
 function updateSalePrice() {
@@ -546,6 +566,50 @@ function updateSalePrice() {
   else if (channel === 'Direct - Hobby Shop') price = parseFloat(prod.price_wholesale || 0);
   if (price) document.getElementById('f-unit_price').value = price.toFixed(2);
   updateSaleTotal();
+}
+
+const MATERIAL_NAMES = {
+  'Sheet Good - Wood': ['Basswood','Mahogany','Black Walnut','Cherry','Maple'],
+  'Sheet Good - Acrylic': ['Acrylic - Clear','Acrylic - Black','Acrylic - White','Acrylic - Red','Acrylic - Blue','Acrylic - Green','Acrylic - Yellow','Acrylic - Orange','Acrylic - Purple','Acrylic - Pink'],
+  'Sheet Good - Felt': ['Felt - Black','Felt - White','Felt - Red','Felt - Blue','Felt - Green','Felt - Yellow','Felt - Orange','Felt - Purple','Felt - Pink','Felt - Grey'],
+  'Adhesive': ['CA Glue','Wood Glue - PVA','Wood Glue - Titebond','Epoxy'],
+  'Hardware': ['Hinges','Clasps','Screws','Nails'],
+  'Magnets': ['Round 5x3','Round 10x3','Round 10x2','Round 5x2','Round 6x2','Round 3x1','Round 4x2','Round 3x2'],
+  'Finishing': ['Stain','Wood Polish','Masking Tape','Nitrile Gloves','Sponges','Polishing Cloth'],
+  'Packaging': ['Bubble Wrap','Shipping Box - Small','Shipping Box - Medium','Shipping Box - Large','Printer Paper','Shipping Labels','Tissue Paper'],
+  'Dice': ['d4','d6','d8','d10','d12','d20','d100','Polyhedral Set'],
+  'Other': [],
+};
+
+function updateMaterialNameOptions() {
+  const cat = document.getElementById('f-category')?.value || '';
+  const datalist = document.getElementById('f-name-suggestions');
+  const nameInput = document.getElementById('f-name');
+  const magnetSel = document.getElementById('f-magnet-size');
+
+  // Show/hide thickness based on category
+  const thickEl = document.getElementById('f-thickness')?.closest('.field');
+  if (thickEl) {
+    const showThickness = cat.startsWith('Sheet Good') || cat === 'Other';
+    thickEl.style.display = showThickness ? '' : 'none';
+  }
+
+  // Handle Magnets category specially
+  const nameField = nameInput?.closest('.field');
+  const magnetField = magnetSel?.closest('.field');
+  if (cat === 'Magnets') {
+    if (nameField) nameField.style.display = 'none';
+    if (magnetField) magnetField.style.display = '';
+    // Sync magnet select to name input so it saves correctly
+    if (magnetSel && nameInput) nameInput.value = magnetSel.value;
+  } else {
+    if (nameField) nameField.style.display = '';
+    if (magnetField) magnetField.style.display = 'none';
+    if (datalist) {
+      const names = MATERIAL_NAMES[cat] || [];
+      datalist.innerHTML = names.map(n => `<option value="${n}">`).join('');
+    }
+  }
 }
 
 function calcCostPerUnit() {
@@ -712,6 +776,7 @@ async function doSave() {
       category: gv('f-category'),
       unit: gv('f-unit') || 'sheet',
       cost_per_unit: gvn('f-cost_per_unit'),
+      thickness: gv('f-thickness'),
       supplier: gv('f-supplier'),
       supplier_url: gv('f-supplier_url'),
       reorder_threshold: gvn('f-reorder_threshold'),
