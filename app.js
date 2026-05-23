@@ -564,7 +564,7 @@ function renderModalContent(type, data) {
   document.getElementById('modal-body').innerHTML = forms[type]();
   if (type === 'product') setTimeout(updateProductPreview, 50);
   if (type === 'sale') setTimeout(updateSalePrice, 50);
-  if (type === 'material') setTimeout(updateMaterialNameOptions, 50);
+  if (type === 'material') setTimeout(() => initMaterialForm(!!currentEditId), 50);
 }
 
 function updateSalePrice() {
@@ -598,78 +598,120 @@ const MATERIAL_NAMES = {
 // Categories that use a dropdown instead of a free-text name field
 const DROPDOWN_CATEGORIES = ['Magnets', 'Sheet Good - Wood', 'Finishing'];
 
-function updateMaterialNameOptions() {
-  const cat = document.getElementById('f-category')?.value || '';
-  const nameInput = document.getElementById('f-name');
-  const nameWrap = document.getElementById('name-field-wrap');
-  const magnetField = document.getElementById('magnet-size-field');
-  const woodField = document.getElementById('wood-type-field');
+function applyMaterialLayout(cat, existingName) {
+  // Get all relevant elements
+  const nameInput    = document.getElementById('f-name');
+  const nameWrap     = document.getElementById('name-field-wrap');
+  const magnetField  = document.getElementById('magnet-size-field');
+  const woodField    = document.getElementById('wood-type-field');
   const finishingField = document.getElementById('finishing-type-field');
-  const magnetSel = document.getElementById('f-magnet-size');
-  const woodSel = document.getElementById('f-wood-type');
+  const magnetSel    = document.getElementById('f-magnet-size');
+  const woodSel      = document.getElementById('f-wood-type');
   const finishingSel = document.getElementById('f-finishing-type');
-  const datalist = document.getElementById('f-name-suggestions');
-  const thickSel = document.getElementById('f-thickness');
-  const unitInput = document.getElementById('f-unit');
-  const totalPaid = document.getElementById('f-total-paid');
-  const qtyPurchased = document.getElementById('f-qty-purchased');
-  const costPerUnit = document.getElementById('f-cost_per_unit');
+  const datalist     = document.getElementById('f-name-suggestions');
+  const thickSel     = document.getElementById('f-thickness');
 
-  // Reset all dependent fields when category changes
-  if (nameInput) nameInput.value = '';
-  if (magnetSel) magnetSel.selectedIndex = 0;
-  if (woodSel) woodSel.selectedIndex = 0;
-  if (finishingSel) finishingSel.selectedIndex = 0;
-  if (thickSel) thickSel.selectedIndex = 0;
-  if (totalPaid) totalPaid.value = '';
-  if (qtyPurchased) qtyPurchased.value = '';
-  if (costPerUnit) costPerUnit.value = '0';
-
-  // Auto-fill unit based on category
-  const unitDefaults = {
-    'Sheet Good - Wood': 'Sheet',
-    'Sheet Good - Acrylic': 'Sheet',
-    'Sheet Good - Felt': 'Sheet',
-    'Finishing': 'Jar',
-    'Adhesive': 'Bottle',
-    'Hardware': 'Unit',
-    'Magnets': 'Unit',
-    'Packaging': 'Unit',
-    'Dice': 'Set',
-    'Other': '',
-  };
-  if (unitInput && cat in unitDefaults) unitInput.value = unitDefaults[cat];
-
-  // Show/hide thickness — only for sheet goods and Other
+  // Show/hide thickness
   const thickEl = thickSel?.closest('.field');
   if (thickEl) {
     thickEl.style.display = (cat.startsWith('Sheet Good') || cat === 'Other') ? '' : 'none';
   }
 
-  // Hide all special name fields first, show free-text by default
-  if (nameWrap) nameWrap.style.display = '';
-  if (magnetField) magnetField.style.display = 'none';
-  if (woodField) woodField.style.display = 'none';
+  // Hide all special name fields, show free-text by default
+  if (nameWrap)      nameWrap.style.display = '';
+  if (magnetField)   magnetField.style.display = 'none';
+  if (woodField)     woodField.style.display = 'none';
   if (finishingField) finishingField.style.display = 'none';
 
   if (cat === 'Magnets') {
     if (nameWrap) nameWrap.style.display = 'none';
     if (magnetField) magnetField.style.display = '';
+    // Pre-select saved value if editing
+    if (existingName && magnetSel) {
+      const opt = [...magnetSel.options].find(o => o.value === existingName);
+      if (opt) magnetSel.value = existingName;
+    }
     if (magnetSel && nameInput) nameInput.value = magnetSel.value;
+
   } else if (cat === 'Sheet Good - Wood') {
     if (nameWrap) nameWrap.style.display = 'none';
     if (woodField) woodField.style.display = '';
+    if (existingName && woodSel) {
+      const opt = [...woodSel.options].find(o => o.value === existingName);
+      if (opt) woodSel.value = existingName;
+    }
     if (woodSel && nameInput) nameInput.value = woodSel.value;
+
   } else if (cat === 'Finishing') {
     if (nameWrap) nameWrap.style.display = 'none';
     if (finishingField) finishingField.style.display = '';
+    if (existingName && finishingSel) {
+      const opt = [...finishingSel.options].find(o => o.value === existingName);
+      if (opt) finishingSel.value = existingName;
+    }
     if (finishingSel && nameInput) nameInput.value = finishingSel.value;
+
   } else {
     if (datalist) {
       const names = MATERIAL_NAMES[cat] || [];
       datalist.innerHTML = names.map(n => `<option value="${n}">`).join('');
     }
   }
+}
+
+function initMaterialForm(isEdit) {
+  const cat      = document.getElementById('f-category')?.value || '';
+  const nameInput = document.getElementById('f-name');
+  const existingName = isEdit ? nameInput?.value : '';
+
+  if (!isEdit) {
+    // New material — auto-fill unit based on category
+    const unitInput = document.getElementById('f-unit');
+    const unitDefaults = {
+      'Sheet Good - Wood': 'Sheet', 'Sheet Good - Acrylic': 'Sheet',
+      'Sheet Good - Felt': 'Sheet', 'Finishing': 'Jar', 'Adhesive': 'Bottle',
+      'Hardware': 'Unit', 'Magnets': 'Unit', 'Packaging': 'Unit',
+      'Dice': 'Set', 'Other': '',
+    };
+    if (unitInput && cat in unitDefaults) unitInput.value = unitDefaults[cat];
+  }
+
+  applyMaterialLayout(cat, existingName);
+}
+
+function updateMaterialNameOptions() {
+  // Called when user changes category — always reset dependent fields
+  const cat       = document.getElementById('f-category')?.value || '';
+  const nameInput = document.getElementById('f-name');
+  const magnetSel = document.getElementById('f-magnet-size');
+  const woodSel   = document.getElementById('f-wood-type');
+  const finishingSel = document.getElementById('f-finishing-type');
+  const thickSel  = document.getElementById('f-thickness');
+  const unitInput = document.getElementById('f-unit');
+  const totalPaid = document.getElementById('f-total-paid');
+  const qtyPurchased = document.getElementById('f-qty-purchased');
+  const costPerUnit  = document.getElementById('f-cost_per_unit');
+
+  // Reset all dependent fields
+  if (nameInput)    nameInput.value = '';
+  if (magnetSel)    magnetSel.selectedIndex = 0;
+  if (woodSel)      woodSel.selectedIndex = 0;
+  if (finishingSel) finishingSel.selectedIndex = 0;
+  if (thickSel)     thickSel.selectedIndex = 0;
+  if (totalPaid)    totalPaid.value = '';
+  if (qtyPurchased) qtyPurchased.value = '';
+  if (costPerUnit)  costPerUnit.value = '0';
+
+  // Auto-fill unit
+  const unitDefaults = {
+    'Sheet Good - Wood': 'Sheet', 'Sheet Good - Acrylic': 'Sheet',
+    'Sheet Good - Felt': 'Sheet', 'Finishing': 'Jar', 'Adhesive': 'Bottle',
+    'Hardware': 'Unit', 'Magnets': 'Unit', 'Packaging': 'Unit',
+    'Dice': 'Set', 'Other': '',
+  };
+  if (unitInput && cat in unitDefaults) unitInput.value = unitDefaults[cat];
+
+  applyMaterialLayout(cat, '');
 }
 
 function calcCostPerUnit() {
