@@ -624,3 +624,30 @@ input:-webkit-autofill {
 }
 
 /* Magnet size field visibility is controlled via JS in updateMaterialNameOptions() */
+
+/* ── Reorder button ───────────────────────────────────────────────────────── */
+.btn-reorder {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-family: 'Cinzel', serif;
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  color: var(--gold);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-reorder:hover { background: var(--bg-raised); border-color: var(--gold); }
+.btn-reorder-alert {
+  border-color: var(--amber);
+  color: var(--amber-text);
+  background: var(--amber-bg);
+}
+.btn-reorder-alert:hover { opacity: 0.85; }
+.reorder-no-link {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  cursor: help;
+}

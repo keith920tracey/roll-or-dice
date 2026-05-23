@@ -264,7 +264,7 @@ function renderInventoryList() {
   const sorted = [...DB.inventory].sort((a, b) => a.material_name.localeCompare(b.material_name));
   document.getElementById('inventory-list').innerHTML = sorted.length
     ? `<table class="data-table">
-        <thead><tr><th>Material</th><th>Category</th><th>Thickness</th><th>On Hand</th><th>Status</th><th>Last Updated</th><th></th></tr></thead>
+        <thead><tr><th>Material</th><th>Category</th><th>Thickness</th><th>On Hand</th><th>Status</th><th>Last Updated</th><th>Reorder</th><th></th></tr></thead>
         <tbody>${sorted.map(i => {
           const mat = DB.materials.find(m => m.id === i.material_id);
           const thresh = parseFloat(mat?.reorder_threshold || CONFIG.DEFAULT_LOW_STOCK);
@@ -272,6 +272,9 @@ function renderInventoryList() {
           const status = qty <= 0 ? 'bad' : qty <= thresh ? 'warn' : 'good';
           const statusLabel = qty <= 0 ? 'Out of stock' : qty <= thresh ? 'Low stock' : 'OK';
           const isSheet = mat?.category?.startsWith('Sheet Good');
+          const reorderBtn = mat?.supplier_url
+            ? `<a href="${mat.supplier_url}" target="_blank" class="btn-reorder ${status !== 'good' ? 'btn-reorder-alert' : ''}">Order ↗</a>`
+            : `<span class="reorder-no-link" title="No supplier link saved — edit the material to add one">No link</span>`;
           return `<tr>
             <td>${i.material_name}</td>
             <td>${mat?.category || '—'}</td>
@@ -279,6 +282,7 @@ function renderInventoryList() {
             <td>${i.qty_on_hand} ${mat?.unit || ''}</td>
             <td><span class="badge badge-${status}">${statusLabel}</span></td>
             <td>${i.last_updated || '—'}</td>
+            <td>${reorderBtn}</td>
             <td class="td-actions">
               <button class="btn-icon" onclick="openEditModal('stock','${i.id}')">✎</button>
             </td>
