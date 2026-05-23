@@ -66,40 +66,37 @@ async function maybeEnableApp() {
   if (!gapiInited || !gisInited) return;
 
   const btn = document.getElementById('signin-btn');
-  const savedEmail = localStorage.getItem('rod_user_email');
 
-  if (savedEmail) {
+  // Check for a stored valid token
+  const savedToken = localStorage.getItem('rod_access_token');
+  const savedExpiry = parseInt(localStorage.getItem('rod_token_expiry') || '0');
+  const now = Date.now();
+
+  if (savedToken && savedExpiry > now + 60000) {
+    // Token still valid — restore it and go straight to app
     btn.innerHTML = `${GOOGLE_ICON} Signing in...`;
     btn.disabled = true;
     try {
-      await new Promise((resolve, reject) => {
-        const silentClient = google.accounts.oauth2.initTokenClient({
-          client_id: CONFIG.CLIENT_ID,
-          scope: CONFIG.SCOPES,
-          login_hint: savedEmail,
-          callback: async (resp) => {
-            if (resp.error) { reject(resp.error); return; }
-            await ensureSheets();
-            await loadAllData();
-            showApp();
-            resolve();
-          },
-        });
-        // Empty prompt with login_hint skips the account picker
-        silentClient.requestAccessToken({ prompt: '' });
-      });
+      gapi.client.setToken({ access_token: savedToken });
+      await ensureSheets();
+      await loadAllData();
+      showApp();
       return;
     } catch(e) {
-      // Silent sign-in failed — clear hint and show button
-      localStorage.removeItem('rod_user_email');
-      btn.disabled = false;
-      btn.innerHTML = `${GOOGLE_ICON} Sign in with Google`;
+      // Token rejected — clear and fall through to sign-in button
+      clearStoredAuth();
     }
-  } else {
-    // No saved session — show the sign-in button
-    btn.disabled = false;
-    btn.innerHTML = `${GOOGLE_ICON} Sign in with Google`;
   }
+
+  // No valid token — show sign-in button
+  btn.disabled = false;
+  btn.innerHTML = `${GOOGLE_ICON} Sign in with Google`;
+}
+
+function clearStoredAuth() {
+  localStorage.removeItem('rod_access_token');
+  localStorage.removeItem('rod_token_expiry');
+  localStorage.removeItem('rod_user_email');
 }
 
 function handleSignIn() {
@@ -107,8 +104,7 @@ function handleSignIn() {
     alert('Still initializing — please wait a moment and try again.');
     return;
   }
-  // First time sign-in — show account picker
-  tokenClient.requestAccessToken({ prompt: 'select_account' });
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 function handleSignOut() {
@@ -118,22 +114,29 @@ function handleSignOut() {
     gapi.client.setToken('');
   }
   // Clear saved session so login screen shows next time
-  localStorage.removeItem('rod_user_email');
+  clearStoredAuth();
   DB = { products:[], materials:[], inventory:[], sales:[], equipment:[] };
   document.getElementById('app').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
 }
 
 async function showApp() {
-  // Fetch the user's email from Google and save it for auto sign-in next time
+  // Save token + expiry (Google tokens last 1 hour = 3600s)
   try {
+    const tokenObj = gapi.client.getToken();
+    if (tokenObj?.access_token) {
+      localStorage.setItem('rod_access_token', tokenObj.access_token);
+      localStorage.setItem('rod_token_expiry', String(Date.now() + 3500 * 1000));
+    }
+    // Fetch and display user email
     const resp = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer ' + gapi.client.getToken().access_token }
+      headers: { Authorization: 'Bearer ' + tokenObj.access_token }
     });
     const info = await resp.json();
     if (info.email) {
       localStorage.setItem('rod_user_email', info.email);
-      document.getElementById('user-info').textContent = info.email;
+      const el = document.getElementById('user-info');
+      if (el) el.textContent = info.email;
     }
   } catch(e) {}
   document.getElementById('auth-screen').classList.add('hidden');
