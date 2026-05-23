@@ -451,23 +451,30 @@ function renderModalContent(type, data) {
           ${['Sheet Good - Acrylic','Sheet Good - Felt','Sheet Good - Wood','Adhesive','Dice','Finishing','Hardware','Magnets','Packaging','Other']
             .map(c=>`<option${v('category')===c?' selected':''}>${c}</option>`).join('')}
         </select></div>
-        <div class="field" id="name-field-wrap"><label>Name *</label>
+        <div class="field" id="name-field-wrap"><label>Type / Color *</label>
           <div class="name-input-wrap">
             <input id="f-name" value="${v('name')}" placeholder="e.g. Basswood 12x12" list="f-name-suggestions">
             <datalist id="f-name-suggestions"></datalist>
           </div>
         </div>
         <div class="field" id="magnet-size-field">
-          <label>Magnet size *</label>
+          <label>Type / Color *</label>
           <select id="f-magnet-size" onchange="document.getElementById('f-name').value=this.value">
             ${['Round 3x1','Round 3x2','Round 4x2','Round 5x2','Round 5x3','Round 6x2','Round 10x2','Round 10x3']
               .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
           </select>
         </div>
         <div class="field" id="wood-type-field">
-          <label>Wood type *</label>
+          <label>Type / Color *</label>
           <select id="f-wood-type" onchange="document.getElementById('f-name').value=this.value">
             ${['Basswood','Black Walnut','Cherry','Mahogany','Maple']
+              .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" id="finishing-type-field">
+          <label>Type / Color *</label>
+          <select id="f-finishing-type" onchange="document.getElementById('f-name').value=this.value">
+            ${['Classic Grey','Colonial Maple','Dark Walnut','Driftwood','Early American','Ebony','English Chestnut','Expresso','Fruitwood','Golden Oak','Golden Pecan','Gunstock','Honey','Ipswitch Pine','Jacobean','Masking Tape','Natural','Nitrile Gloves','Pickled Oak','Polishing Cloth','Provincial','Puritan Pine','Red Chestnut','Red Mahogany','Red Oak','Sedona Red','Special Walnut','Sponges','Weathered Oak','Wood Polish']
               .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
           </select>
         </div>
@@ -582,14 +589,14 @@ const MATERIAL_NAMES = {
   'Adhesive': ['CA Glue','Epoxy','Wood Glue - PVA','Wood Glue - Titebond'],
   'Hardware': ['Clasps','Hinges','Nails','Screws'],
   'Magnets': ['Round 3x1','Round 3x2','Round 4x2','Round 5x2','Round 5x3','Round 6x2','Round 10x2','Round 10x3'],
-  'Finishing': ['Masking Tape','Nitrile Gloves','Polishing Cloth','Sponges','Stain','Wood Polish'],
+  'Finishing': ['Classic Grey','Colonial Maple','Dark Walnut','Driftwood','Early American','Ebony','English Chestnut','Expresso','Fruitwood','Golden Oak','Golden Pecan','Gunstock','Honey','Ipswitch Pine','Jacobean','Masking Tape','Natural','Nitrile Gloves','Pickled Oak','Polishing Cloth','Provincial','Puritan Pine','Red Chestnut','Red Mahogany','Red Oak','Sedona Red','Special Walnut','Sponges','Weathered Oak','Wood Polish'],
   'Packaging': ['Bubble Wrap','Printer Paper','Shipping Box - Large','Shipping Box - Medium','Shipping Box - Small','Shipping Labels','Tissue Paper'],
   'Dice': ['d4','d6','d8','d10','d12','d20','d100','Polyhedral Set'],
   'Other': [],
 };
 
 // Categories that use a dropdown instead of a free-text name field
-const DROPDOWN_CATEGORIES = ['Magnets', 'Sheet Good - Wood'];
+const DROPDOWN_CATEGORIES = ['Magnets', 'Sheet Good - Wood', 'Finishing'];
 
 function updateMaterialNameOptions() {
   const cat = document.getElementById('f-category')?.value || '';
@@ -607,10 +614,14 @@ function updateMaterialNameOptions() {
     thickEl.style.display = (cat.startsWith('Sheet Good') || cat === 'Other') ? '' : 'none';
   }
 
+  const finishingField = document.getElementById('finishing-type-field');
+  const finishingSel = document.getElementById('f-finishing-type');
+
   // Hide all special fields first
   if (nameWrap) nameWrap.style.display = '';
   if (magnetField) magnetField.style.display = 'none';
   if (woodField) woodField.style.display = 'none';
+  if (finishingField) finishingField.style.display = 'none';
 
   if (cat === 'Magnets') {
     if (nameWrap) nameWrap.style.display = 'none';
@@ -620,6 +631,10 @@ function updateMaterialNameOptions() {
     if (nameWrap) nameWrap.style.display = 'none';
     if (woodField) woodField.style.display = '';
     if (woodSel && nameInput) nameInput.value = woodSel.value;
+  } else if (cat === 'Finishing') {
+    if (nameWrap) nameWrap.style.display = 'none';
+    if (finishingField) finishingField.style.display = '';
+    if (finishingSel && nameInput) nameInput.value = finishingSel.value;
   } else {
     if (datalist) {
       const names = MATERIAL_NAMES[cat] || [];
