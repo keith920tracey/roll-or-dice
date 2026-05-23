@@ -452,9 +452,29 @@ function renderModalContent(type, data) {
             .map(c=>`<option${v('category')===c?' selected':''}>${c}</option>`).join('')}
         </select></div>
         <div class="field"><label>Unit *</label><input id="f-unit" value="${v('unit','sheet')}" placeholder="e.g. sheet, bottle, pack, each"></div>
-        <div class="field"><label>Cost per unit ($) *</label><input type="number" id="f-cost_per_unit" value="${v('cost_per_unit','0')}" step="0.01" min="0"></div>
         <div class="field"><label>Supplier</label><input id="f-supplier" value="${v('supplier')}" placeholder="e.g. Woodcraft, Amazon"></div>
         <div class="field"><label>Reorder when below</label><input type="number" id="f-reorder_threshold" value="${v('reorder_threshold','3')}" step="1" min="0"></div>
+      </div>
+      <div class="cost-calc-box">
+        <div class="cost-calc-title">Cost calculator — enter what you paid and how many you got</div>
+        <div class="cost-calc-row">
+          <div class="field">
+            <label>Total price paid ($)</label>
+            <input type="number" id="f-total-paid" step="0.01" min="0" placeholder="e.g. 24.99" oninput="calcCostPerUnit()">
+          </div>
+          <div class="cost-calc-divider">÷</div>
+          <div class="field">
+            <label>Quantity purchased</label>
+            <input type="number" id="f-qty-purchased" step="1" min="1" placeholder="e.g. 12" oninput="calcCostPerUnit()">
+          </div>
+          <div class="cost-calc-divider">=</div>
+          <div class="field">
+            <label>Cost per unit ($) *</label>
+            <input type="number" id="f-cost_per_unit" value="${v('cost_per_unit','0')}" step="0.01" min="0" oninput="calcCostPerUnit()">
+          </div>
+        </div>
+      </div>
+      <div class="fg2">
         <div class="field full"><label>Notes</label><textarea id="f-notes">${v('notes')}</textarea></div>
       </div>`,
 
@@ -519,6 +539,16 @@ function updateSalePrice() {
   else if (channel === 'Direct - Hobby Shop') price = parseFloat(prod.price_wholesale || 0);
   if (price) document.getElementById('f-unit_price').value = price.toFixed(2);
   updateSaleTotal();
+}
+
+function calcCostPerUnit() {
+  const totalPaid = parseFloat(document.getElementById('f-total-paid')?.value || 0);
+  const qtyPurchased = parseFloat(document.getElementById('f-qty-purchased')?.value || 0);
+  const costField = document.getElementById('f-cost_per_unit');
+  if (!costField) return;
+  if (totalPaid > 0 && qtyPurchased > 0) {
+    costField.value = (totalPaid / qtyPurchased).toFixed(4);
+  }
 }
 
 function updateSaleTotal() {
