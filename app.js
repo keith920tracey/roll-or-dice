@@ -913,8 +913,8 @@ async function doSave() {
     if (!currentEditId) {
       await appendRow('Inventory', {
         id: genId(), material_id: obj.id, material_name: obj.name,
-        thickness: obj.thickness || '',
         qty_on_hand: '0', last_updated: new Date().toISOString().slice(0,10), notes: '',
+        thickness: obj.thickness || '',
       });
     }
   }
@@ -929,10 +929,10 @@ async function doSave() {
       id: currentEditId || genId(),
       material_id: matId,
       material_name: matName,
-      thickness: thickSel?.value || '',
       qty_on_hand: gvn('f-qty_on_hand'),
       last_updated: new Date().toISOString().slice(0,10),
       notes: gv('f-notes'),
+      thickness: thickSel?.value || '',
     };
     if (currentEditId) await updateRow('Inventory', obj); else await appendRow('Inventory', obj);
   }
