@@ -451,7 +451,7 @@ function renderModalContent(type, data) {
           ${['Sheet Good - Wood','Sheet Good - Acrylic','Sheet Good - Felt','Adhesive','Hardware','Magnets','Finishing','Packaging','Dice','Other']
             .map(c=>`<option${v('category')===c?' selected':''}>${c}</option>`).join('')}
         </select></div>
-        <div class="field"><label>Name *</label>
+        <div class="field" id="name-field-wrap"><label>Name *</label>
           <div class="name-input-wrap">
             <input id="f-name" value="${v('name')}" placeholder="e.g. Basswood 12x12" list="f-name-suggestions">
             <datalist id="f-name-suggestions"></datalist>
@@ -583,27 +583,25 @@ const MATERIAL_NAMES = {
 
 function updateMaterialNameOptions() {
   const cat = document.getElementById('f-category')?.value || '';
-  const datalist = document.getElementById('f-name-suggestions');
   const nameInput = document.getElementById('f-name');
   const magnetSel = document.getElementById('f-magnet-size');
+  const magnetField = document.getElementById('magnet-size-field');
+  const nameWrap = document.getElementById('name-field-wrap');
+  const datalist = document.getElementById('f-name-suggestions');
 
-  // Show/hide thickness based on category
+  // Show/hide thickness
   const thickEl = document.getElementById('f-thickness')?.closest('.field');
   if (thickEl) {
-    const showThickness = cat.startsWith('Sheet Good') || cat === 'Other';
-    thickEl.style.display = showThickness ? '' : 'none';
+    thickEl.style.display = (cat.startsWith('Sheet Good') || cat === 'Other') ? '' : 'none';
   }
 
-  // Handle Magnets category specially
-  const nameField = nameInput?.closest('.field');
-  const magnetField = magnetSel?.closest('.field');
   if (cat === 'Magnets') {
-    if (nameField) nameField.style.display = 'none';
+    if (nameWrap) nameWrap.style.display = 'none';
     if (magnetField) magnetField.style.display = '';
-    // Sync magnet select to name input so it saves correctly
+    // Pre-fill name with current magnet selection
     if (magnetSel && nameInput) nameInput.value = magnetSel.value;
   } else {
-    if (nameField) nameField.style.display = '';
+    if (nameWrap) nameWrap.style.display = '';
     if (magnetField) magnetField.style.display = 'none';
     if (datalist) {
       const names = MATERIAL_NAMES[cat] || [];

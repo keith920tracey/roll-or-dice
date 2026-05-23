@@ -623,7 +623,4 @@ input:-webkit-autofill {
   font-weight: 400;
 }
 
-/* ── Magnet size field — hidden by default, shown only for Magnets category ── */
-#magnet-size-field {
-  display: none;
-}
+/* Magnet size field visibility is controlled via JS in updateMaterialNameOptions() */
