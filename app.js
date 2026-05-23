@@ -448,7 +448,7 @@ function renderModalContent(type, data) {
     material: () => `
       <div class="fg2">
         <div class="field"><label>Category *</label><select id="f-category" onchange="updateMaterialNameOptions()">
-          ${['Sheet Good - Wood','Sheet Good - Acrylic','Sheet Good - Felt','Adhesive','Hardware','Magnets','Finishing','Packaging','Dice','Other']
+          ${['Sheet Good - Acrylic','Sheet Good - Felt','Sheet Good - Wood','Adhesive','Dice','Finishing','Hardware','Magnets','Packaging','Other']
             .map(c=>`<option${v('category')===c?' selected':''}>${c}</option>`).join('')}
         </select></div>
         <div class="field" id="name-field-wrap"><label>Name *</label>
@@ -460,7 +460,14 @@ function renderModalContent(type, data) {
         <div class="field" id="magnet-size-field">
           <label>Magnet size *</label>
           <select id="f-magnet-size" onchange="document.getElementById('f-name').value=this.value">
-            ${['Round 5x3','Round 10x3','Round 10x2','Round 5x2','Round 6x2','Round 3x1','Round 4x2','Round 3x2']
+            ${['Round 3x1','Round 3x2','Round 4x2','Round 5x2','Round 5x3','Round 6x2','Round 10x2','Round 10x3']
+              .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field" id="wood-type-field">
+          <label>Wood type *</label>
+          <select id="f-wood-type" onchange="document.getElementById('f-name').value=this.value">
+            ${['Basswood','Black Walnut','Cherry','Mahogany','Maple']
               .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
           </select>
         </div>
@@ -569,40 +576,51 @@ function updateSalePrice() {
 }
 
 const MATERIAL_NAMES = {
-  'Sheet Good - Wood': ['Basswood','Mahogany','Black Walnut','Cherry','Maple'],
-  'Sheet Good - Acrylic': ['Acrylic - Clear','Acrylic - Black','Acrylic - White','Acrylic - Red','Acrylic - Blue','Acrylic - Green','Acrylic - Yellow','Acrylic - Orange','Acrylic - Purple','Acrylic - Pink'],
-  'Sheet Good - Felt': ['Felt - Black','Felt - White','Felt - Red','Felt - Blue','Felt - Green','Felt - Yellow','Felt - Orange','Felt - Purple','Felt - Pink','Felt - Grey'],
-  'Adhesive': ['CA Glue','Wood Glue - PVA','Wood Glue - Titebond','Epoxy'],
-  'Hardware': ['Hinges','Clasps','Screws','Nails'],
-  'Magnets': ['Round 5x3','Round 10x3','Round 10x2','Round 5x2','Round 6x2','Round 3x1','Round 4x2','Round 3x2'],
-  'Finishing': ['Stain','Wood Polish','Masking Tape','Nitrile Gloves','Sponges','Polishing Cloth'],
-  'Packaging': ['Bubble Wrap','Shipping Box - Small','Shipping Box - Medium','Shipping Box - Large','Printer Paper','Shipping Labels','Tissue Paper'],
+  'Sheet Good - Wood': ['Basswood','Black Walnut','Cherry','Mahogany','Maple'],
+  'Sheet Good - Acrylic': ['Acrylic - Black','Acrylic - Blue','Acrylic - Clear','Acrylic - Green','Acrylic - Orange','Acrylic - Pink','Acrylic - Purple','Acrylic - Red','Acrylic - White','Acrylic - Yellow'],
+  'Sheet Good - Felt': ['Felt - Black','Felt - Blue','Felt - Green','Felt - Grey','Felt - Orange','Felt - Pink','Felt - Purple','Felt - Red','Felt - White','Felt - Yellow'],
+  'Adhesive': ['CA Glue','Epoxy','Wood Glue - PVA','Wood Glue - Titebond'],
+  'Hardware': ['Clasps','Hinges','Nails','Screws'],
+  'Magnets': ['Round 3x1','Round 3x2','Round 4x2','Round 5x2','Round 5x3','Round 6x2','Round 10x2','Round 10x3'],
+  'Finishing': ['Masking Tape','Nitrile Gloves','Polishing Cloth','Sponges','Stain','Wood Polish'],
+  'Packaging': ['Bubble Wrap','Printer Paper','Shipping Box - Large','Shipping Box - Medium','Shipping Box - Small','Shipping Labels','Tissue Paper'],
   'Dice': ['d4','d6','d8','d10','d12','d20','d100','Polyhedral Set'],
   'Other': [],
 };
 
+// Categories that use a dropdown instead of a free-text name field
+const DROPDOWN_CATEGORIES = ['Magnets', 'Sheet Good - Wood'];
+
 function updateMaterialNameOptions() {
   const cat = document.getElementById('f-category')?.value || '';
   const nameInput = document.getElementById('f-name');
-  const magnetSel = document.getElementById('f-magnet-size');
-  const magnetField = document.getElementById('magnet-size-field');
   const nameWrap = document.getElementById('name-field-wrap');
+  const magnetField = document.getElementById('magnet-size-field');
+  const woodField = document.getElementById('wood-type-field');
+  const magnetSel = document.getElementById('f-magnet-size');
+  const woodSel = document.getElementById('f-wood-type');
   const datalist = document.getElementById('f-name-suggestions');
 
-  // Show/hide thickness
+  // Show/hide thickness — only for sheet goods and Other
   const thickEl = document.getElementById('f-thickness')?.closest('.field');
   if (thickEl) {
     thickEl.style.display = (cat.startsWith('Sheet Good') || cat === 'Other') ? '' : 'none';
   }
 
+  // Hide all special fields first
+  if (nameWrap) nameWrap.style.display = '';
+  if (magnetField) magnetField.style.display = 'none';
+  if (woodField) woodField.style.display = 'none';
+
   if (cat === 'Magnets') {
     if (nameWrap) nameWrap.style.display = 'none';
     if (magnetField) magnetField.style.display = '';
-    // Pre-fill name with current magnet selection
     if (magnetSel && nameInput) nameInput.value = magnetSel.value;
+  } else if (cat === 'Sheet Good - Wood') {
+    if (nameWrap) nameWrap.style.display = 'none';
+    if (woodField) woodField.style.display = '';
+    if (woodSel && nameInput) nameInput.value = woodSel.value;
   } else {
-    if (nameWrap) nameWrap.style.display = '';
-    if (magnetField) magnetField.style.display = 'none';
     if (datalist) {
       const names = MATERIAL_NAMES[cat] || [];
       datalist.innerHTML = names.map(n => `<option value="${n}">`).join('');
