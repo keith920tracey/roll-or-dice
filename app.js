@@ -1,8 +1,21 @@
 // Roll or Dice — Main Application Logic
 
+// ── Mobile Menu ─────────────────────────────────────────────────────────────
+
+function openMobileMenu() {
+  document.getElementById('sidebar')?.classList.add('mobile-open');
+  document.getElementById('mobile-overlay')?.classList.add('active');
+}
+
+function closeMobileMenu() {
+  document.getElementById('sidebar')?.classList.remove('mobile-open');
+  document.getElementById('mobile-overlay')?.classList.remove('active');
+}
+
 // ── Page Navigation ─────────────────────────────────────────────────────────
 
 async function showPage(name) {
+  closeMobileMenu();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
