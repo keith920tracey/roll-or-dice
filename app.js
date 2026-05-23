@@ -474,7 +474,7 @@ function renderModalContent(type, data) {
         <div class="field" id="finishing-type-field">
           <label>Type / Color *</label>
           <select id="f-finishing-type" onchange="document.getElementById('f-name').value=this.value">
-            ${['Classic Grey','Colonial Maple','Dark Walnut','Driftwood','Early American','Ebony','English Chestnut','Expresso','Fruitwood','Golden Oak','Golden Pecan','Gunstock','Honey','Ipswitch Pine','Jacobean','Masking Tape','Natural','Nitrile Gloves','Pickled Oak','Polishing Cloth','Provincial','Puritan Pine','Red Chestnut','Red Mahogany','Red Oak','Sedona Red','Special Walnut','Sponges','Weathered Oak','Wood Polish']
+            ${['Cherry','Classic Grey','Colonial Maple','Dark Walnut','Driftwood','Early American','Ebony','English Chestnut','Expresso','Fruitwood','Golden Oak','Golden Pecan','Gunstock','Honey','Ipswitch Pine','Jacobean','Natural','Pickled Oak','Provincial','Puritan Pine','Red Chestnut','Red Mahogany','Red Oak','Sedona Red','Special Walnut','Weathered Oak']
               .map(s=>`<option${v('name')===s?' selected':''}>${s}</option>`).join('')}
           </select>
         </div>
@@ -589,10 +589,10 @@ const MATERIAL_NAMES = {
   'Adhesive': ['CA Glue','Epoxy','Wood Glue - PVA','Wood Glue - Titebond'],
   'Hardware': ['Clasps','Hinges','Nails','Screws'],
   'Magnets': ['Round 3x1','Round 3x2','Round 4x2','Round 5x2','Round 5x3','Round 6x2','Round 10x2','Round 10x3'],
-  'Finishing': ['Classic Grey','Colonial Maple','Dark Walnut','Driftwood','Early American','Ebony','English Chestnut','Expresso','Fruitwood','Golden Oak','Golden Pecan','Gunstock','Honey','Ipswitch Pine','Jacobean','Masking Tape','Natural','Nitrile Gloves','Pickled Oak','Polishing Cloth','Provincial','Puritan Pine','Red Chestnut','Red Mahogany','Red Oak','Sedona Red','Special Walnut','Sponges','Weathered Oak','Wood Polish'],
+  'Finishing': ['Cherry','Classic Grey','Colonial Maple','Dark Walnut','Driftwood','Early American','Ebony','English Chestnut','Expresso','Fruitwood','Golden Oak','Golden Pecan','Gunstock','Honey','Ipswitch Pine','Jacobean','Natural','Pickled Oak','Provincial','Puritan Pine','Red Chestnut','Red Mahogany','Red Oak','Sedona Red','Special Walnut','Weathered Oak'],
   'Packaging': ['Bubble Wrap','Printer Paper','Shipping Box - Large','Shipping Box - Medium','Shipping Box - Small','Shipping Labels','Tissue Paper'],
   'Dice': ['d4','d6','d8','d10','d12','d20','d100','Polyhedral Set'],
-  'Other': [],
+  'Other': ['Masking Tape','Nitrile Gloves','Polishing Cloth','Sponges','Wood Polish'],
 };
 
 // Categories that use a dropdown instead of a free-text name field
