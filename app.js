@@ -625,6 +625,21 @@ function updateMaterialNameOptions() {
   if (qtyPurchased) qtyPurchased.value = '';
   if (costPerUnit) costPerUnit.value = '0';
 
+  // Auto-fill unit based on category
+  const unitDefaults = {
+    'Sheet Good - Wood': 'Sheet',
+    'Sheet Good - Acrylic': 'Sheet',
+    'Sheet Good - Felt': 'Sheet',
+    'Finishing': 'Jar',
+    'Adhesive': 'Bottle',
+    'Hardware': 'Unit',
+    'Magnets': 'Unit',
+    'Packaging': 'Unit',
+    'Dice': 'Set',
+    'Other': '',
+  };
+  if (unitInput && cat in unitDefaults) unitInput.value = unitDefaults[cat];
+
   // Show/hide thickness — only for sheet goods and Other
   const thickEl = thickSel?.closest('.field');
   if (thickEl) {
