@@ -93,11 +93,16 @@ function renderDashboard() {
   const totalRevenue = DB.sales.reduce((s, sale) => s + parseFloat(sale.total_revenue || 0), 0);
   const totalUnits   = DB.sales.reduce((s, sale) => s + parseInt(sale.qty || 0), 0);
   const productCount = DB.products.length;
-  const lowStock     = DB.inventory.filter(i => {
+  // Debug: log inventory vs materials matching
+  console.log('Inventory rows:', DB.inventory.map(i => ({id:i.id, mid:i.material_id, name:i.material_name, qty:i.qty_on_hand})));
+  console.log('Materials:', DB.materials.map(m => ({id:m.id, name:m.name, thresh:m.reorder_threshold})));
+
+  const lowStock = DB.inventory.filter(i => {
     const mat = DB.materials.find(m => m.id === i.material_id);
     const thresh = parseFloat(mat?.reorder_threshold || CONFIG.DEFAULT_LOW_STOCK);
     const qty = parseFloat(i.qty_on_hand) || 0;
-    return !isNaN(qty) && qty < thresh;
+    console.log(`${i.material_name}: qty=${qty}, thresh=${thresh}, mat=${mat?.name}, low=${qty < thresh}`);
+    return qty < thresh;
   });
 
   document.getElementById('dash-stats').innerHTML = `
