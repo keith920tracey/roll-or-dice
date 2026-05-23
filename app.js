@@ -263,16 +263,18 @@ function renderInventoryList() {
   const sorted = [...DB.inventory].sort((a, b) => a.material_name.localeCompare(b.material_name));
   document.getElementById('inventory-list').innerHTML = sorted.length
     ? `<table class="data-table">
-        <thead><tr><th>Material</th><th>Category</th><th>On Hand</th><th>Status</th><th>Last Updated</th><th></th></tr></thead>
+        <thead><tr><th>Material</th><th>Category</th><th>Thickness</th><th>On Hand</th><th>Status</th><th>Last Updated</th><th></th></tr></thead>
         <tbody>${sorted.map(i => {
           const mat = DB.materials.find(m => m.id === i.material_id);
           const thresh = parseFloat(mat?.reorder_threshold || CONFIG.DEFAULT_LOW_STOCK);
           const qty = parseFloat(i.qty_on_hand || 0);
           const status = qty <= 0 ? 'bad' : qty <= thresh ? 'warn' : 'good';
           const statusLabel = qty <= 0 ? 'Out of stock' : qty <= thresh ? 'Low stock' : 'OK';
+          const isSheet = mat?.category?.startsWith('Sheet Good');
           return `<tr>
             <td>${i.material_name}</td>
             <td>${mat?.category || '—'}</td>
+            <td>${isSheet ? (i.thickness || '—') : '—'}</td>
             <td>${i.qty_on_hand} ${mat?.unit || ''}</td>
             <td><span class="badge badge-${status}">${statusLabel}</span></td>
             <td>${i.last_updated || '—'}</td>
@@ -519,11 +521,21 @@ function renderModalContent(type, data) {
       </div>`,
 
     stock: () => {
-      const matOptions = DB.materials.map(m =>
-        `<option value="${m.id}" data-name="${m.name}"${v('material_id')===m.id?' selected':''}>${m.name} (${m.category})</option>`
-      ).join('');
+      const matOptions = DB.materials
+        .sort((a,b) => a.name.localeCompare(b.name))
+        .map(m => `<option value="${m.id}" data-name="${m.name}" data-cat="${m.category}" data-thickness="${m.thickness||''}"${v('material_id')===m.id?' selected':''}>${m.name}${m.thickness?' ('+m.thickness+')':''} — ${m.category}</option>`)
+        .join('');
+      const selMat = DB.materials.find(m => m.id === v('material_id'));
+      const isSheet = selMat?.category?.startsWith('Sheet Good');
       return `<div class="fg2">
-        <div class="field"><label>Material *</label><select id="f-material_id">${matOptions}</select></div>
+        <div class="field full"><label>Material *</label><select id="f-material_id" onchange="updateStockThickness()">${matOptions}</select></div>
+        <div class="field" id="stock-thickness-field" style="${isSheet ? '' : 'display:none'}">
+          <label>Thickness</label>
+          <select id="f-stock-thickness">
+            <option value="">— not applicable —</option>
+            ${['1mm','3mm','5mm'].map(t=>`<option${v('thickness')===t?' selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
         <div class="field"><label>Quantity on hand *</label><input type="number" id="f-qty_on_hand" value="${v('qty_on_hand','0')}" step="0.5" min="0"></div>
         <div class="field full"><label>Notes</label><textarea id="f-notes">${v('notes')}</textarea></div>
       </div>`;
@@ -584,7 +596,7 @@ function updateSalePrice() {
 
 const MATERIAL_NAMES = {
   'Sheet Good - Wood': ['Basswood','Black Walnut','Cherry','Mahogany','Maple'],
-  'Sheet Good - Acrylic': ['Acrylic - Black','Acrylic - Blue','Acrylic - Clear','Acrylic - Green','Acrylic - Orange','Acrylic - Pink','Acrylic - Purple','Acrylic - Red','Acrylic - White','Acrylic - Yellow'],
+  'Sheet Good - Acrylic': ['Black','Blue','Clear','Green','Marbled - Black','Marbled - Blue','Marbled - Bronze','Marbled - Green','Marbled - Lt Blue','Marbled - Pink','Marbled - Red','Marbled - Silver','Marbled - White','Orange','Pink','Purple','Red','White','Yellow'],
   'Sheet Good - Felt': ['Felt - Black','Felt - Blue','Felt - Green','Felt - Grey','Felt - Orange','Felt - Pink','Felt - Purple','Felt - Red','Felt - White','Felt - Yellow'],
   'Adhesive': ['CA Glue','Epoxy','Wood Glue - PVA','Wood Glue - Titebond'],
   'Hardware': ['Clasps','Hinges','Nails','Screws'],
@@ -722,6 +734,18 @@ function calcCostPerUnit() {
   if (totalPaid > 0 && qtyPurchased > 0) {
     costField.value = (totalPaid / qtyPurchased).toFixed(4);
   }
+}
+
+function updateStockThickness() {
+  const sel = document.getElementById('f-material_id');
+  const opt = sel?.selectedOptions[0];
+  const cat = opt?.dataset.cat || '';
+  const thickness = opt?.dataset.thickness || '';
+  const thickField = document.getElementById('stock-thickness-field');
+  const thickSel = document.getElementById('f-stock-thickness');
+  if (thickField) thickField.style.display = cat.startsWith('Sheet Good') ? '' : 'none';
+  // Pre-select thickness from material record if available
+  if (thickSel && thickness) thickSel.value = thickness;
 }
 
 function updateSaleTotal() {
@@ -889,6 +913,7 @@ async function doSave() {
     if (!currentEditId) {
       await appendRow('Inventory', {
         id: genId(), material_id: obj.id, material_name: obj.name,
+        thickness: obj.thickness || '',
         qty_on_hand: '0', last_updated: new Date().toISOString().slice(0,10), notes: '',
       });
     }
@@ -899,10 +924,12 @@ async function doSave() {
     const matId = matSel?.value || '';
     const matName = matSel?.selectedOptions[0]?.dataset.name || '';
     if (!matId) throw new Error('Please select a material.');
+    const thickSel = document.getElementById('f-stock-thickness');
     const obj = {
       id: currentEditId || genId(),
       material_id: matId,
       material_name: matName,
+      thickness: thickSel?.value || '',
       qty_on_hand: gvn('f-qty_on_hand'),
       last_updated: new Date().toISOString().slice(0,10),
       notes: gv('f-notes'),

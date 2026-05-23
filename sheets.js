@@ -21,7 +21,7 @@ const SCHEMA = {
     'id','name','category','unit','thickness','cost_per_unit','supplier','supplier_url','reorder_threshold','notes'
   ],
   Inventory: [
-    'id','material_id','material_name','qty_on_hand','last_updated','notes'
+    'id','material_id','material_name','thickness','qty_on_hand','last_updated','notes'
   ],
   Sales: [
     'id','date','product_id','product_name','channel','qty','unit_price','total_revenue',
