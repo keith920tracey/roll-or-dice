@@ -10,12 +10,14 @@ let gisInited  = false;
 const SCHEMA = {
   Products: [
     'id','name','category','sku','description',
-    'wood','acrylic','felt','adhesive','hardware','finishing','packaging_mat','other_mat',
-    'waste_pct',
     'labor_hours','labor_rate',
     'laser_minutes',
     'price_etsy','price_direct','price_wholesale',
     'notes','created_at'
+  ],
+  BOM: [
+    'id','product_id','material_id','material_name','material_category',
+    'thickness','unit','qty','waste_pct','cost_per_unit','line_total'
   ],
   Materials: [
     'id','name','category','unit','thickness','cost_per_unit','supplier','supplier_url','reorder_threshold','notes'
@@ -186,6 +188,7 @@ async function ensureSheets() {
 
 let DB = {
   products:  [],
+  bom:       [],
   materials: [],
   inventory: [],
   sales:     [],
@@ -198,6 +201,7 @@ async function loadAllData() {
   showSync('Loading data...');
   try {
     DB.products  = await readSheet('Products');
+    DB.bom       = await readSheet('BOM');
     DB.materials = await readSheet('Materials');
     DB.inventory = await readSheet('Inventory');
     DB.sales     = await readSheet('Sales');

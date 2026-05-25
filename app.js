@@ -34,17 +34,14 @@ async function showPage(name) {
 
 // ── Cost Calculation ────────────────────────────────────────────────────────
 
-function calcProductCost(p) {
-  const mat = [
-    'wood','acrylic','felt','adhesive','hardware','finishing','packaging_mat','other_mat'
-  ].reduce((sum, k) => sum + parseFloat(p[k] || 0), 0);
-
-  const wasteMult = 1 + (parseFloat(p.waste_pct || 0) / 100);
-  const matWithWaste = mat * wasteMult;
+function calcProductCost(p, bomLines) {
+  // Sum BOM lines (each already has line_total = qty * cost_per_unit * waste multiplier)
+  const lines = bomLines || DB.bom.filter(b => b.product_id === p.id);
+  const matWithWaste = lines.reduce((sum, b) => sum + parseFloat(b.line_total || 0), 0);
 
   const labor = parseFloat(p.labor_hours || 0) * parseFloat(p.labor_rate || 0);
 
-  // Equipment cost: find laser cutter and calc per-minute rate
+  // Equipment cost from laser cutter settings
   const laser = DB.equipment.find(e => e.name.toLowerCase().includes('laser'));
   let equipCost = 0;
   if (laser && p.laser_minutes) {
@@ -58,22 +55,15 @@ function calcProductCost(p) {
   }
 
   const subtotal = matWithWaste + labor + equipCost;
-
   const priceEtsy = parseFloat(p.price_etsy || 0);
   const priceDirect = parseFloat(p.price_direct || 0);
   const priceWholesale = parseFloat(p.price_wholesale || 0);
-
   const etsyFees = priceEtsy > 0
     ? (priceEtsy * CONFIG.FEES.ETSY_TRANSACTION) + (priceEtsy * CONFIG.FEES.ETSY_PAYMENT) + CONFIG.FEES.ETSY_LISTING
     : 0;
 
   return {
-    matRaw: mat,
-    matWithWaste,
-    labor,
-    equipCost,
-    subtotal,
-    etsyFees,
+    matWithWaste, labor, equipCost, subtotal, etsyFees,
     totalCostEtsy: subtotal + etsyFees,
     totalCostDirect: subtotal,
     profitEtsy: priceEtsy - (subtotal + etsyFees),
@@ -83,6 +73,11 @@ function calcProductCost(p) {
     marginDirect: priceDirect > 0 ? ((priceDirect - subtotal) / priceDirect) * 100 : 0,
     marginWholesale: priceWholesale > 0 ? ((priceWholesale - subtotal) / priceWholesale) * 100 : 0,
   };
+}
+
+// Calculate line total for a BOM row: qty * cost_per_unit * (1 + waste_pct/100)
+function calcBOMLineTotal(qty, costPerUnit, wastePct) {
+  return parseFloat(qty || 0) * parseFloat(costPerUnit || 0) * (1 + parseFloat(wastePct || 0) / 100);
 }
 
 function suggestedPrice(cost, targetMarginPct, etsyFeesPct = 0) {
@@ -134,7 +129,7 @@ function renderDashboard() {
 
   // Top products by profit (Etsy channel)
   const ranked = DB.products
-    .map(p => ({ p, c: calcProductCost(p) }))
+    .map(p => ({ p, c: calcProductCost(p, DB.bom.filter(b => b.product_id === p.id)) }))
     .sort((a, b) => b.c.profitEtsy - a.c.profitEtsy)
     .slice(0, 5);
 
@@ -204,7 +199,11 @@ function renderProductList() {
 
   document.getElementById('product-list').innerHTML = list.length
     ? list.map(p => {
-        const c = calcProductCost(p);
+        const bomLines = DB.bom.filter(b => b.product_id === p.id);
+        const c = calcProductCost(p, bomLines);
+        const bomSummary = bomLines.length
+          ? bomLines.map(b => `${b.material_name}${b.thickness?' ('+b.thickness+')':''} ×${b.qty}`).join(', ')
+          : 'No materials added';
         return `<div class="product-card" onclick="openEditModal('product','${p.id}')">
           <div class="pc-top">
             <div>
@@ -216,6 +215,7 @@ function renderProductList() {
               <button class="btn-icon btn-icon-del" onclick="confirmDelete('Products','${p.id}','products')">✕</button>
             </div>
           </div>
+          <div class="pc-bom-summary">${bomSummary}</div>
           <div class="pc-channels">
             <div class="channel-row">
               <span class="ch-label">Etsy</span>
@@ -428,7 +428,11 @@ function renderModalContent(type, data) {
   document.getElementById('modal-title').textContent = (currentEditId ? 'Edit ' : 'Add ') + titles[type];
 
   const forms = {
-    product: () => `
+    product: () => {
+      // Load existing BOM lines for this product if editing
+      const existingBOM = currentEditId ? DB.bom.filter(b => b.product_id === currentEditId) : [];
+      window._bomLines = existingBOM.map(b => ({...b}));
+      return `
       <div class="form-section"><div class="form-section-title">Product Info</div>
         <div class="fg2">
           <div class="field"><label>Name *</label><input id="f-name" value="${v('name')}" placeholder="e.g. Dragon's Hoard Dice Box"></div>
@@ -437,18 +441,10 @@ function renderModalContent(type, data) {
           <div class="field full"><label>Description / Notes</label><textarea id="f-description">${v('description')}</textarea></div>
         </div>
       </div>
-      <div class="form-section"><div class="form-section-title">Material Costs ($ per unit, before waste)</div>
-        <div class="fg3">
-          <div class="field"><label>Wood / MDF</label><input type="number" id="f-wood" value="${v('wood','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Acrylic</label><input type="number" id="f-acrylic" value="${v('acrylic','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Felt</label><input type="number" id="f-felt" value="${v('felt','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Adhesive (glue/CA)</label><input type="number" id="f-adhesive" value="${v('adhesive','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Hardware (magnets etc.)</label><input type="number" id="f-hardware" value="${v('hardware','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Finishing (stain/polish)</label><input type="number" id="f-finishing" value="${v('finishing','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Packaging materials</label><input type="number" id="f-packaging_mat" value="${v('packaging_mat','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Other materials</label><input type="number" id="f-other_mat" value="${v('other_mat','0')}" step="0.01" min="0" oninput="updateProductPreview()"></div>
-          <div class="field"><label>Material waste %</label><input type="number" id="f-waste_pct" value="${v('waste_pct','5')}" step="1" min="0" max="100" oninput="updateProductPreview()"><span class="field-hint">e.g. 5 = 5% waste added to material cost</span></div>
-        </div>
+      <div class="form-section">
+        <div class="form-section-title">Bill of Materials</div>
+        <div id="bom-lines"></div>
+        <button type="button" class="btn-secondary btn-sm bom-add-btn" onclick="addBOMLine()">+ Add Material</button>
       </div>
       <div class="form-section"><div class="form-section-title">Labor & Equipment</div>
         <div class="fg3">
@@ -469,7 +465,8 @@ function renderModalContent(type, data) {
           <div class="field"><label>Hobby shop price ($)</label><input type="number" id="f-price_wholesale" value="${v('price_wholesale','0')}" step="0.5" min="0" oninput="updateProductPreview()"></div>
         </div>
         <div id="product-preview" class="cost-preview"></div>
-      </div>`,
+      </div>`;
+    },
 
     material: () => `
       <div class="fg2">
@@ -600,7 +597,7 @@ function renderModalContent(type, data) {
   };
 
   document.getElementById('modal-body').innerHTML = forms[type]();
-  if (type === 'product') setTimeout(updateProductPreview, 50);
+  if (type === 'product') setTimeout(() => { renderBOMLines(); updateProductPreview(); }, 50);
   if (type === 'sale') setTimeout(updateSalePrice, 50);
   if (type === 'material') setTimeout(() => initMaterialForm(!!currentEditId), 50);
 }
@@ -778,6 +775,106 @@ function updateStockInfo() {
   if (thickVal) thickVal.value = thickness || '—';
 }
 
+// ── BOM Line Management ─────────────────────────────────────────────────────
+
+function renderBOMLines() {
+  const el = document.getElementById('bom-lines');
+  if (!el) return;
+  const lines = window._bomLines || [];
+  if (!lines.length) {
+    el.innerHTML = '<div class="bom-empty">No materials added yet. Click "+ Add Material" below.</div>';
+    updateProductPreview();
+    return;
+  }
+  el.innerHTML = lines.map((line, idx) => `
+    <div class="bom-line" data-idx="${idx}">
+      <div class="bom-line-info">
+        <span class="bom-mat-name">${line.material_name}${line.thickness ? ' <span class="item-thickness">'+line.thickness+'</span>' : ''}</span>
+        <span class="bom-mat-cat">${line.material_category}</span>
+      </div>
+      <div class="bom-line-inputs">
+        <div class="bom-field">
+          <label>Qty (${line.unit || 'unit'})</label>
+          <input type="number" value="${line.qty}" step="0.25" min="0"
+            onchange="updateBOMLine(${idx},'qty',this.value)">
+        </div>
+        <div class="bom-field">
+          <label>Waste %</label>
+          <input type="number" value="${line.waste_pct}" step="1" min="0" max="100"
+            onchange="updateBOMLine(${idx},'waste_pct',this.value)">
+        </div>
+        <div class="bom-field bom-cost">
+          <label>Cost/unit</label>
+          <span>$${parseFloat(line.cost_per_unit).toFixed(4)}</span>
+        </div>
+        <div class="bom-field bom-total">
+          <label>Line total</label>
+          <span>${fmt(line.line_total)}</span>
+        </div>
+        <button class="btn-icon btn-icon-del bom-del" onclick="removeBOMLine(${idx})">✕</button>
+      </div>
+    </div>`).join('');
+  updateProductPreview();
+}
+
+function addBOMLine() {
+  // Show a material picker modal-within-modal style dropdown
+  const matOptions = DB.materials
+    .sort((a,b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name))
+    .map(m => `<option value="${m.id}">${m.name}${m.thickness ? ' ('+m.thickness+')' : ''} — ${m.category} @ $${parseFloat(m.cost_per_unit||0).toFixed(4)}/${m.unit}</option>`)
+    .join('');
+  const picker = document.createElement('div');
+  picker.className = 'bom-picker';
+  picker.innerHTML = `
+    <div class="bom-picker-inner">
+      <div class="bom-picker-title">Select a material to add</div>
+      <select id="bom-mat-select" class="bom-mat-select">${matOptions}</select>
+      <div class="bom-picker-actions">
+        <button class="btn-secondary btn-sm" onclick="this.closest('.bom-picker').remove()">Cancel</button>
+        <button class="btn-primary btn-sm" onclick="confirmAddBOMLine()">Add</button>
+      </div>
+    </div>`;
+  document.getElementById('bom-lines').appendChild(picker);
+}
+
+function confirmAddBOMLine() {
+  const sel = document.getElementById('bom-mat-select');
+  const matId = sel?.value;
+  const mat = DB.materials.find(m => m.id === matId);
+  if (!mat) return;
+  const line = {
+    id: genId(),
+    product_id: currentEditId || '',
+    material_id: mat.id,
+    material_name: mat.name,
+    material_category: mat.category,
+    thickness: mat.thickness || '',
+    unit: mat.unit || 'unit',
+    qty: '1',
+    waste_pct: '5',
+    cost_per_unit: mat.cost_per_unit || '0',
+    line_total: calcBOMLineTotal(1, mat.cost_per_unit, 5).toFixed(4),
+  };
+  window._bomLines = window._bomLines || [];
+  window._bomLines.push(line);
+  sel?.closest('.bom-picker')?.remove();
+  renderBOMLines();
+}
+
+function updateBOMLine(idx, field, value) {
+  if (!window._bomLines) return;
+  window._bomLines[idx][field] = value;
+  const line = window._bomLines[idx];
+  line.line_total = calcBOMLineTotal(line.qty, line.cost_per_unit, line.waste_pct).toFixed(4);
+  renderBOMLines();
+}
+
+function removeBOMLine(idx) {
+  if (!window._bomLines) return;
+  window._bomLines.splice(idx, 1);
+  renderBOMLines();
+}
+
 function updateSaleTotal() {
   const qty = parseFloat(document.getElementById('f-qty')?.value || 1);
   const unit = parseFloat(document.getElementById('f-unit_price')?.value || 0);
@@ -790,15 +887,6 @@ function updateSaleTotal() {
 
 function updateProductPreview() {
   const mock = {
-    wood: document.getElementById('f-wood')?.value || 0,
-    acrylic: document.getElementById('f-acrylic')?.value || 0,
-    felt: document.getElementById('f-felt')?.value || 0,
-    adhesive: document.getElementById('f-adhesive')?.value || 0,
-    hardware: document.getElementById('f-hardware')?.value || 0,
-    finishing: document.getElementById('f-finishing')?.value || 0,
-    packaging_mat: document.getElementById('f-packaging_mat')?.value || 0,
-    other_mat: document.getElementById('f-other_mat')?.value || 0,
-    waste_pct: document.getElementById('f-waste_pct')?.value || 0,
     labor_hours: document.getElementById('f-labor_hours')?.value || 0,
     labor_rate: document.getElementById('f-labor_rate')?.value || 15,
     laser_minutes: document.getElementById('f-laser_minutes')?.value || 0,
@@ -806,11 +894,11 @@ function updateProductPreview() {
     price_direct: document.getElementById('f-price_direct')?.value || 0,
     price_wholesale: document.getElementById('f-price_wholesale')?.value || 0,
   };
-  const c = calcProductCost(mock);
+  const c = calcProductCost(mock, window._bomLines || []);
   const el = document.getElementById('product-preview');
   if (!el) return;
   el.innerHTML = `
-    <div class="preview-row"><span>Materials (with ${mock.waste_pct}% waste)</span><span>${fmt(c.matWithWaste)}</span></div>
+    <div class="preview-row"><span>Materials (from BOM)</span><span>${fmt(c.matWithWaste)}</span></div>
     <div class="preview-row"><span>Labor (${mock.labor_hours}h × $${mock.labor_rate}/hr)</span><span>${fmt(c.labor)}</span></div>
     <div class="preview-row"><span>Equipment (laser ${mock.laser_minutes} min)</span><span>${fmt(c.equipCost)}</span></div>
     <div class="preview-row preview-subtotal"><span>Your cost to make</span><span>${fmt(c.subtotal)}</span></div>
@@ -839,21 +927,12 @@ function updateProductPreview() {
 function applyTargetMargin() {
   const target = parseFloat(document.getElementById('f-target-margin')?.value || 40);
   const mock = {
-    wood: document.getElementById('f-wood')?.value||0,
-    acrylic: document.getElementById('f-acrylic')?.value||0,
-    felt: document.getElementById('f-felt')?.value||0,
-    adhesive: document.getElementById('f-adhesive')?.value||0,
-    hardware: document.getElementById('f-hardware')?.value||0,
-    finishing: document.getElementById('f-finishing')?.value||0,
-    packaging_mat: document.getElementById('f-packaging_mat')?.value||0,
-    other_mat: document.getElementById('f-other_mat')?.value||0,
-    waste_pct: document.getElementById('f-waste_pct')?.value||0,
     labor_hours: document.getElementById('f-labor_hours')?.value||0,
     labor_rate: document.getElementById('f-labor_rate')?.value||15,
     laser_minutes: document.getElementById('f-laser_minutes')?.value||0,
     price_etsy:'0', price_direct:'0', price_wholesale:'0',
   };
-  const c = calcProductCost(mock);
+  const c = calcProductCost(mock, window._bomLines || []);
   const etsyFeesPct = CONFIG.FEES.ETSY_TRANSACTION + CONFIG.FEES.ETSY_PAYMENT;
   const priceEtsy = suggestedPrice(c.subtotal, target, etsyFeesPct);
   const priceDirect = suggestedPrice(c.subtotal, target, 0);
@@ -904,16 +983,13 @@ async function doSave() {
 
   if (currentModal === 'product') {
     if (!gv('f-name').trim()) throw new Error('Product name is required.');
+    const productId = currentEditId || genId();
     const obj = {
-      id: currentEditId || genId(),
+      id: productId,
       name: gv('f-name').trim(),
       category: gv('f-category'),
       sku: gv('f-sku'),
       description: gv('f-description'),
-      wood: gvn('f-wood'), acrylic: gvn('f-acrylic'), felt: gvn('f-felt'),
-      adhesive: gvn('f-adhesive'), hardware: gvn('f-hardware'),
-      finishing: gvn('f-finishing'), packaging_mat: gvn('f-packaging_mat'),
-      other_mat: gvn('f-other_mat'), waste_pct: gvn('f-waste_pct'),
       labor_hours: gvn('f-labor_hours'), labor_rate: gvn('f-labor_rate'),
       laser_minutes: gvn('f-laser_minutes'),
       price_etsy: gvn('f-price_etsy'), price_direct: gvn('f-price_direct'),
@@ -922,6 +998,18 @@ async function doSave() {
       created_at: currentEditId ? (DB.products.find(p=>p.id===currentEditId)?.created_at||new Date().toISOString().slice(0,10)) : new Date().toISOString().slice(0,10),
     };
     if (currentEditId) await updateRow('Products', obj); else await appendRow('Products', obj);
+
+    // Save BOM lines — delete old ones first if editing, then append all current lines
+    if (currentEditId) {
+      const oldLines = DB.bom.filter(b => b.product_id === currentEditId);
+      for (const line of oldLines) await deleteRow('BOM', line.id);
+    }
+    for (const line of (window._bomLines || [])) {
+      line.product_id = productId;
+      if (!line.id) line.id = genId();
+      await appendRow('BOM', line);
+    }
+    window._bomLines = [];
   }
 
   else if (currentModal === 'material') {

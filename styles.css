@@ -753,3 +753,69 @@ input:-webkit-autofill {
   margin-left: 4px;
   vertical-align: middle;
 }
+
+/* ── Bill of Materials ────────────────────────────────────────────────────── */
+.bom-empty {
+  font-size: 13px; color: var(--text-dim); font-style: italic;
+  padding: 0.5rem 0 0.75rem;
+}
+.bom-add-btn { margin-top: 0.5rem; }
+
+.bom-line {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 8px;
+}
+.bom-line-info {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.bom-mat-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.bom-mat-cat { font-size: 12px; color: var(--text-dim); font-style: italic; }
+.bom-line-inputs {
+  display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
+}
+.bom-field { display: flex; flex-direction: column; gap: 3px; }
+.bom-field label { font-size: 11px; color: var(--text-dim); }
+.bom-field input {
+  width: 80px;
+  background: var(--bg-deep); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 5px 8px;
+  color: var(--text-primary); font-family: 'Crimson Pro', serif; font-size: 13px;
+}
+.bom-cost span, .bom-total span {
+  font-size: 14px; color: var(--text-primary); padding: 5px 0; display: block;
+}
+.bom-total span { color: var(--gold); font-weight: 500; }
+.bom-del { margin-bottom: 4px; }
+
+/* Material picker */
+.bom-picker {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-gold);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-top: 8px;
+}
+.bom-picker-title {
+  font-size: 12px; color: var(--gold); font-family: 'Cinzel', serif;
+  letter-spacing: 0.04em; margin-bottom: 8px;
+}
+.bom-mat-select {
+  width: 100%;
+  background: var(--bg-panel); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 7px 10px;
+  color: var(--text-primary); font-family: 'Crimson Pro', serif; font-size: 14px;
+  margin-bottom: 10px;
+}
+.bom-picker-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* BOM summary on product card */
+.pc-bom-summary {
+  font-size: 11px; color: var(--text-dim); font-style: italic;
+  padding: 4px 0 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
